@@ -27,6 +27,8 @@ export function updateDependency(
     : shallow.updateDependency(params);
 }
 
+export { updateArtifacts } from './artifacts';
+
 export const language = ProgrammingLanguage.Java;
 
 export const defaultConfig = {

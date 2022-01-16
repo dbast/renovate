@@ -20,7 +20,7 @@ import {
 
 const http = new Http('gradle-wrapper');
 
-async function addIfUpdated(
+export async function addIfUpdated(
   status: StatusResult,
   fileProjectPath: string
 ): Promise<UpdateArtifactsResult | null> {
