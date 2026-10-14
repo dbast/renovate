@@ -10,6 +10,7 @@ import * as hostRules from '../../../util/host-rules.ts';
 import { regEx } from '../../../util/regex.ts';
 import type { UpdateArtifact, UpdateArtifactsResult } from '../types.ts';
 import { resolveToolConstraint } from '../util.ts';
+import { getFlakeLockNotice } from './artifacts-notice.ts';
 
 export async function updateArtifacts({
   packageFileName,
@@ -65,13 +66,22 @@ export async function updateArtifacts({
       return null;
     }
     logger.debug('Returning updated flake.lock');
+    const newLockFileContent = await readLocalFile(lockFileName, 'utf8');
+    const notice = newLockFileContent
+      ? getFlakeLockNotice(
+          existingLockFileContent,
+          newLockFileContent,
+          lockFileName,
+        )
+      : null;
     return [
       {
         file: {
           type: 'addition',
           path: lockFileName,
-          contents: await readLocalFile(lockFileName),
+          contents: newLockFileContent,
         },
+        ...(notice && { notice }),
       },
     ];
   } catch (err) {

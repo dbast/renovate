@@ -121,6 +121,69 @@ describe('modules/manager/nix/artifacts', () => {
     expect(execSnapshots).toMatchObject([{ cmd: updateInputCmd }]);
   });
 
+  it('attaches a notice summarizing changed flake inputs', async () => {
+    const oldLock = JSON.stringify({
+      nodes: {
+        nixpkgs: {
+          locked: {
+            type: 'github',
+            owner: 'NixOS',
+            repo: 'nixpkgs',
+            rev: '95ca1e203c0750115fd4a6f17d5a245dfe6b1edd',
+            lastModified: 1704067200,
+          },
+        },
+      },
+      version: 7,
+    });
+    const newLock = JSON.stringify({
+      nodes: {
+        nixpkgs: {
+          locked: {
+            type: 'github',
+            owner: 'NixOS',
+            repo: 'nixpkgs',
+            rev: '7993f34ee47e28a3d607a525aadc6c94b73be728',
+            lastModified: 1706745600,
+          },
+        },
+      },
+      version: 7,
+    });
+    fs.readLocalFile.mockResolvedValueOnce(oldLock);
+    const execSnapshots = mockExecAll();
+    git.getRepoStatus.mockResolvedValue(
+      partial<StatusResult>({
+        modified: ['flake.lock'],
+      }),
+    );
+    fs.readLocalFile.mockResolvedValueOnce(newLock);
+
+    const res = await updateArtifacts({
+      packageFileName: 'flake.nix',
+      updatedDeps: [{ depName: 'nixpkgs' }],
+      newPackageFileContent: 'some new content',
+      config,
+    });
+
+    expect(res).toEqual([
+      {
+        file: {
+          contents: newLock,
+          path: 'flake.lock',
+          type: 'addition',
+        },
+        notice: {
+          file: 'flake.lock',
+          message: expect.stringContaining(
+            '[compare](https://github.com/NixOS/nixpkgs/compare/95ca1e203c0750115fd4a6f17d5a245dfe6b1edd..7993f34ee47e28a3d607a525aadc6c94b73be728)',
+          ),
+        },
+      },
+    ]);
+    expect(execSnapshots).toMatchObject([{ cmd: updateInputCmd }]);
+  });
+
   it('adds GitHub token', async () => {
     fs.readLocalFile.mockResolvedValueOnce('current flake.lock');
     const execSnapshots = mockExecAll();

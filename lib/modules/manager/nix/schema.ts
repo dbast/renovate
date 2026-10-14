@@ -13,7 +13,11 @@ const InputType = z.enum([
 ]);
 
 const LockedInput = z.object({
+  host: z.string().optional(),
+  lastModified: z.number().optional(),
+  owner: z.string().optional(),
   ref: z.string().optional(),
+  repo: z.string().optional(),
   rev: z.string().optional(),
   type: InputType,
   url: z.string().optional(),
